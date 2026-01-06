@@ -23,8 +23,9 @@ export async function handleInteraction(req: Request): Promise<Response> {
     const body = await req.text();
 
     if (!signature || !timestamp) return new Response("Bad Request", { status: 400 });
-    console.log({body, signature, timestamp, env})
-    if (!verifyKey(body, signature, timestamp, env.discordPublicKey)) {
+
+    const verified = await verifyKey(body, signature, timestamp, env.discordPublicKey);
+    if (!verified) {
         return new Response("Unauthorized", { status: 401 });
     }
 
