@@ -1,6 +1,7 @@
 {
   "version": "5",
   "specifiers": {
+    "npm:discord-interactions@*": "4.4.0",
     "npm:mongoose@*": "9.1.2"
   },
   "npm": {
@@ -21,6 +22,9 @@
     },
     "bson@7.0.0": {
       "integrity": "sha512-Kwc6Wh4lQ5OmkqqKhYGKIuELXl+EPYSCObVE6bWsp1T/cGkOCBN0I8wF/T44BiuhHyNi1mmKVPXk60d41xZ7kw=="
+    },
+    "discord-interactions@4.4.0": {
+      "integrity": "sha512-jjJx8iwAeJcj8oEauV43fue9lNqkf38fy60aSs2+G8D1nJmDxUIrk08o3h0F3wgwuBWWJUZO+X/VgfXsxpCiJA=="
     },
     "kareem@3.0.0": {
       "integrity": "sha512-RKhaOBSPN8L7y4yAgNhDT2602G5FD6QbOIISbjN9D6mjHPeqeg7K+EB5IGSU5o81/X2Gzm3ICnAvQW3x3OP8HA=="
@@ -95,6 +99,7 @@
   "workspace": {
     "dependencies": [
       "jsr:@std/assert@1",
+      "npm:discord-interactions@*",
       "npm:mongoose@*"
     ]
   }

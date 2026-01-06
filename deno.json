@@ -1,6 +1,6 @@
 {
   "tasks": {
-    "dev": "deno run --allow-net --allow-env --allow-sys=osRelease --allow-read=/.dockerenv --watch main.ts"
+    "dev": "deno run --env-file=.env --allow-net --allow-env --allow-sys=osRelease --allow-read=/.dockerenv --watch main.ts"
   },
   "imports": {
     "@config/": "./config/",
@@ -8,6 +8,7 @@
     "@infra/": "./infra/",
     "@messages/": "./messages/",
     "@std/assert": "jsr:@std/assert@1",
+    "discord-interactions": "npm:discord-interactions",
     "mongoose": "npm:mongoose"
   }
 }
