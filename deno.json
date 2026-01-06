@@ -1,6 +1,6 @@
 {
   "tasks": {
-    "dev": "deno run --env-file=.env --allow-net --allow-env --allow-sys=osRelease --allow-read=/.dockerenv --watch main.ts"
+    "dev": "deno run --env-file=.env --unstable-cron --allow-net --allow-env --allow-sys=osRelease --allow-read=/.dockerenv --watch main.ts"
   },
   "imports": {
     "@config/": "./config/",
