@@ -12,7 +12,7 @@ jobs:
     steps:
       - name: Call spawn endpoint
         run: |
-          curl -sS -X POST "$SPAWN_URL" \
+          curl -f -sS -X POST "$SPAWN_URL" \
             -H "x-cron-key: $CRON_KEY"
         env:
           SPAWN_URL: ${{ secrets.SPAWN_URL }}
