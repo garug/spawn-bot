@@ -8,13 +8,6 @@ import { env } from "@config/env.ts";
 import { connectDatabase } from "@config/mongo.ts";
 import { handleDex } from "@messages/dex/handle.ts";
 
-let booted = false;
-async function boot() {
-    if (booted) return;
-    await connectDatabase();
-    booted = true;
-}
-
 export async function handleInteraction(req: Request): Promise<Response> {
     if (req.method !== "POST") return new Response("Method Not Allowed", { status: 405 });
 
@@ -46,7 +39,7 @@ export async function handleInteraction(req: Request): Promise<Response> {
 
         queueMicrotask(async () => {
             try {
-                await boot();
+                await connectDatabase();
 
                 const data = await handleDex(interaction.member.user.id);
 
@@ -68,7 +61,7 @@ export async function handleInteraction(req: Request): Promise<Response> {
                     }),
                 });
             } catch (e) {
-                // nesse caso ephemeral
+                console.error({ interaction, e });
                 await fetch(`https://discord.com/api/v10/webhooks/${appId}/${token}/messages/@original`, {
                     method: "PATCH",
                     headers: { "Content-Type": "application/json" },
@@ -80,6 +73,7 @@ export async function handleInteraction(req: Request): Promise<Response> {
         // responde rápido
         return Response.json({
             type: InteractionResponseType.DEFERRED_CHANNEL_MESSAGE_WITH_SOURCE,
+            data: { flags: 64 }
         });
     }
 

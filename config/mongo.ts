@@ -8,14 +8,12 @@ export async function connectDatabase(): Promise<void> {
 
     try {
         console.log("Connecting to database...");
-        await mongoose.connect(env.mongoUri, {
-            autoIndex: true,
-        });
+        await mongoose.connect(env.mongoUri);
 
         connected = true;
         console.log("Database connected");
     } catch (error) {
         console.error("Error connecting to database", error);
-        throw error; // deixa o caller decidir (exit, retry, etc)
+        throw error;
     }
 }
