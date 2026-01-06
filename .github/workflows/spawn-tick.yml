@@ -8,6 +8,7 @@ on:
 jobs:
   tick:
     runs-on: ubuntu-latest
+    environment: prod
     steps:
       - name: Call spawn endpoint
         run: |
