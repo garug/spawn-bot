@@ -1,6 +1,7 @@
 name: spawn-tick
 
 on:
+  workflow_dispatch: {}
   schedule:
     - cron: "* * * * *"
 
