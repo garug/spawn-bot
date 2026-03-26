@@ -11,3 +11,7 @@ Deno.serve((req) => {
 
   return new Response("Not found", { status: 404 });
 });
+
+Deno.cron("Log a message", "* * * * *", () => {
+  console.log("This will print once a minute.");
+});
