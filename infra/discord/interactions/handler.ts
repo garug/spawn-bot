@@ -4,6 +4,7 @@ import {
     verifyKey,
 } from "discord-interactions";
 
+import { context } from "npm:@opentelemetry/api";
 import { env } from "@config/env.ts";
 import { connectDatabase } from "@config/mongo.ts";
 import { handleDex } from "@messages/dex/handle.ts";
@@ -39,7 +40,8 @@ export async function handleInteraction(req: Request): Promise<Response> {
         const userId = interaction.member?.user?.id ?? interaction.user?.id;
         if (!userId) return new Response("Bad Request", { status: 400 });
 
-        queueMicrotask(async () => {
+        const ctx = context.active();
+        queueMicrotask(context.bind(ctx, async () => {
             try {
                 await connectDatabase();
 
@@ -70,7 +72,7 @@ export async function handleInteraction(req: Request): Promise<Response> {
                     body: JSON.stringify({ content: "Erro ao executar /dex." }),
                 }).catch(() => { });
             }
-        });
+        }));
 
         // responde rápido
         return Response.json({
@@ -89,7 +91,8 @@ export async function handleInteraction(req: Request): Promise<Response> {
 
         const guess: string = interaction.data.options?.[0]?.value ?? "";
 
-        queueMicrotask(async () => {
+        const catchCtx = context.active();
+        queueMicrotask(context.bind(catchCtx, async () => {
             try {
                 await connectDatabase();
 
@@ -114,7 +117,7 @@ export async function handleInteraction(req: Request): Promise<Response> {
                     body: JSON.stringify({ content: "Erro ao executar /catch." }),
                 }).catch(() => { });
             }
-        });
+        }));
 
         return Response.json({
             type: InteractionResponseType.DEFERRED_CHANNEL_MESSAGE_WITH_SOURCE,
