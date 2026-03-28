@@ -4,7 +4,7 @@ import {
     verifyKey,
 } from "discord-interactions";
 
-import { context } from "npm:@opentelemetry/api";
+import { context, trace, SpanStatusCode, type Span } from "npm:@opentelemetry/api";
 import { env } from "@config/env.ts";
 import { traced } from "@infra/telemetry.ts";
 import { connectDatabase } from "@config/mongo.ts";
@@ -12,17 +12,24 @@ import { handleDex } from "@messages/dex/handle.ts";
 import { handleCatch } from "@messages/catch/handle.ts";
 import { spawnRepository, catchRepository } from "@config/container.ts";
 
-export async function handleInteraction(req: Request): Promise<Response> {
-    if (req.method !== "POST") return new Response("Method Not Allowed", { status: 405 });
+export async function handleInteraction(req: Request, span: Span): Promise<Response> {
+    if (req.method !== "POST") {
+        span.end();
+        return new Response("Method Not Allowed", { status: 405 });
+    }
 
     const signature = req.headers.get("X-Signature-Ed25519");
     const timestamp = req.headers.get("X-Signature-Timestamp");
     const body = await req.text();
 
-    if (!signature || !timestamp) return new Response("Bad Request", { status: 400 });
+    if (!signature || !timestamp) {
+        span.end();
+        return new Response("Bad Request", { status: 400 });
+    }
 
     const verified = await verifyKey(body, signature, timestamp, env.discordPublicKey);
     if (!verified) {
+        span.end();
         return new Response("Unauthorized", { status: 401 });
     }
 
@@ -30,6 +37,7 @@ export async function handleInteraction(req: Request): Promise<Response> {
 
     // PING
     if (interaction.type === InteractionType.PING) {
+        span.end();
         return Response.json({ type: InteractionResponseType.PONG });
     }
 
@@ -41,10 +49,10 @@ export async function handleInteraction(req: Request): Promise<Response> {
         const userId = interaction.member?.user?.id ?? interaction.user?.id;
         if (!userId) return new Response("Bad Request", { status: 400 });
 
-        const ctx = context.active();
+        const ctx = trace.setSpan(context.active(), span);
         queueMicrotask(context.bind(ctx, async () => {
-            await traced("interaction.dex", async () => {
-                try {
+            try {
+                await traced("interaction.dex", async () => {
                     await connectDatabase();
 
                     const data = await handleDex(interaction.member.user.id);
@@ -66,16 +74,20 @@ export async function handleInteraction(req: Request): Promise<Response> {
                             }]
                         }),
                     });
-                } catch (e) {
-                    console.error({ interaction, e });
-                    await fetch(`https://discord.com/api/v10/webhooks/${appId}/${token}/messages/@original`, {
-                        method: "PATCH",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ content: "Erro ao executar /dex." }),
-                    }).catch(() => { });
-                    throw e;
-                }
-            });
+                });
+                span.setStatus({ code: SpanStatusCode.OK });
+            } catch (e) {
+                console.error({ interaction, e });
+                span.recordException(e as Error);
+                span.setStatus({ code: SpanStatusCode.ERROR, message: String(e) });
+                await fetch(`https://discord.com/api/v10/webhooks/${appId}/${token}/messages/@original`, {
+                    method: "PATCH",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ content: "Erro ao executar /dex." }),
+                }).catch(() => { });
+            } finally {
+                span.end();
+            }
         }));
 
         // responde rápido
@@ -95,10 +107,10 @@ export async function handleInteraction(req: Request): Promise<Response> {
 
         const guess: string = interaction.data.options?.[0]?.value ?? "";
 
-        const catchCtx = context.active();
+        const catchCtx = trace.setSpan(context.active(), span);
         queueMicrotask(context.bind(catchCtx, async () => {
-            await traced("interaction.catch", async () => {
-                try {
+            try {
+                await traced("interaction.catch", async () => {
                     await connectDatabase();
 
                     const { description, ephemeral } = await handleCatch(userId, guess, {
@@ -114,16 +126,20 @@ export async function handleInteraction(req: Request): Promise<Response> {
                             embeds: [{ color: 0xf39c12, description }],
                         }),
                     });
-                } catch (e) {
-                    console.error({ interaction, e });
-                    await fetch(`https://discord.com/api/v10/webhooks/${appId}/${token}/messages/@original`, {
-                        method: "PATCH",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ content: "Erro ao executar /catch." }),
-                    }).catch(() => { });
-                    throw e;
-                }
-            });
+                });
+                span.setStatus({ code: SpanStatusCode.OK });
+            } catch (e) {
+                console.error({ interaction, e });
+                span.recordException(e as Error);
+                span.setStatus({ code: SpanStatusCode.ERROR, message: String(e) });
+                await fetch(`https://discord.com/api/v10/webhooks/${appId}/${token}/messages/@original`, {
+                    method: "PATCH",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ content: "Erro ao executar /catch." }),
+                }).catch(() => { });
+            } finally {
+                span.end();
+            }
         }));
 
         return Response.json({
@@ -132,5 +148,6 @@ export async function handleInteraction(req: Request): Promise<Response> {
         });
     }
 
+    span.end();
     return new Response("Not handled", { status: 400 });
 }
