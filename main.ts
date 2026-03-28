@@ -1,5 +1,6 @@
 import { handleInteraction } from "@infra/discord/interactions/handler.ts";
 import { handleApi } from "./infra/http/handler.ts";
+import { runSpawnTick } from "@domain/spawn/runSpawnTick.ts";
 
 Deno.serve((req) => {
   const url = new URL(req.url);
@@ -12,6 +13,6 @@ Deno.serve((req) => {
   return new Response("Not found", { status: 404 });
 });
 
-Deno.cron("Log a message", "* * * * *", () => {
-  console.log("This will print once a minute.");
+Deno.cron("Spawn pokemon tick", "* * * * *", async () => {
+  await runSpawnTick({ now: new Date() });
 });

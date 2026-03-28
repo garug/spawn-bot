@@ -1,5 +1,5 @@
 import { verifyInternalRequest } from "./verifyInternalRequest.ts";
-// import { runSpawnTick } from "@domain/spawn/runSpawnTick.ts";
+import { runSpawnTick } from "@domain/spawn/runSpawnTick.ts";
 
 export async function handleApi(req: Request): Promise<Response> {
   const url = new URL(req.url);
@@ -10,7 +10,8 @@ export async function handleApi(req: Request): Promise<Response> {
 
   // POST /api/spawn-tick
   if (url.pathname === "/api/spawn-tick" && req.method === "POST") {
-    // await runSpawnTick({ now: new Date() });
+    const body = await req.json().catch(() => ({}));
+    await runSpawnTick({ now: new Date(), force: body.force === true });
     return new Response("ok");
   }
 
