@@ -1,19 +1,23 @@
 import mongoose from "mongoose";
 import { env } from "./env.ts";
 
-let connected = false;
+let connectionPromise: Promise<void> | null = null;
 
 export async function connectDatabase(): Promise<void> {
-    if (connected) return;
+    if (mongoose.connection.readyState === 1) return;
+    if (connectionPromise) return connectionPromise;
 
-    try {
-        console.log("Connecting to database...");
-        await mongoose.connect(env.mongoUri);
+    connectionPromise = (async () => {
+        try {
+            console.log("Connecting to database...");
+            await mongoose.connect(env.mongoUri);
+            console.log("Database connected");
+        } catch (error) {
+            connectionPromise = null;
+            console.error("Error connecting to database", error);
+            throw error;
+        }
+    })();
 
-        connected = true;
-        console.log("Database connected");
-    } catch (error) {
-        console.error("Error connecting to database", error);
-        throw error;
-    }
+    return connectionPromise;
 }
