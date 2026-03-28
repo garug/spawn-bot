@@ -1,7 +1,7 @@
 {
-  "unstable": ["kv"],
+  "unstable": ["kv", "otel"],
   "tasks": {
-    "dev": "deno run --env-file=.env --unstable-cron --allow-net --allow-env --allow-sys=osRelease --allow-read=/.dockerenv --watch main.ts"
+    "dev": "deno run --env-file=.env --unstable-cron --unstable-otel --allow-net --allow-env --allow-sys=osRelease --allow-read=/.dockerenv --watch main.ts"
   },
   "imports": {
     "@config/": "./config/",
@@ -10,6 +10,7 @@
     "@messages/": "./messages/",
     "@std/assert": "jsr:@std/assert@1",
     "discord-interactions": "npm:discord-interactions",
-    "mongoose": "npm:mongoose"
+    "mongoose": "npm:mongoose",
+    "@opentelemetry/api": "npm:@opentelemetry/api@1"
   }
 }

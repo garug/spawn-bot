@@ -2,19 +2,22 @@ import { env } from "@config/env.ts";
 
 import { SpawnAnnouncer } from "@domain/spawn/ports/announcer.ts";
 import { ActiveSpawn } from "@domain/spawn/spawn.types.ts";
+import { traced } from "@infra/telemetry.ts";
 
 const RARE_POKEMON_CHANCE = 0.0005;
 
 async function post(body: object): Promise<void> {
-    const res = await fetch(`https://discord.com/api/v10/channels/${env.discordChannelId}/messages`, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bot ${env.discordBotToken}`,
-        },
-        body: JSON.stringify(body),
+    await traced("discord.post", async () => {
+        const res = await fetch(`https://discord.com/api/v10/channels/${env.discordChannelId}/messages`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bot ${env.discordBotToken}`,
+            },
+            body: JSON.stringify(body),
+        });
+        if (!res.ok) console.error(`Discord post failed: ${res.status} ${await res.text()}`);
     });
-    if (!res.ok) console.error(`Discord post failed: ${res.status} ${await res.text()}`);
 }
 
 async function announceAppear(spawn: ActiveSpawn) {

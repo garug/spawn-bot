@@ -1,3 +1,4 @@
+import "@infra/telemetry.ts";
 import { handleInteraction } from "@infra/discord/interactions/handler.ts";
 import { handleApi } from "@infra/http/handler.ts";
 
@@ -5,6 +6,7 @@ import { spawnAnnouncer, possibilitiesRepository, spawnRepository, infoRepositor
 
 import { spawn } from "@domain/spawn/spawn.ts";
 import { logger } from "@infra/logger.ts";
+import { traced } from "@infra/telemetry.ts";
 
 const log = logger("cron:spawn");
 
@@ -22,7 +24,7 @@ Deno.serve((req) => {
 Deno.cron("Spawn Routine", "* * * * *", async () => {
   log.info("tick");
 
-  try {
+  await traced("cron.spawn", async () => {
     const result = await spawn({
       announcer: spawnAnnouncer(),
       repository: spawnRepository(),
@@ -49,7 +51,7 @@ Deno.cron("Spawn Routine", "* * * * *", async () => {
         });
         break;
     }
-  } catch (e) {
+  }).catch((e) => {
     log.error("unhandled error", { error: String(e) });
-  }
+  });
 });
