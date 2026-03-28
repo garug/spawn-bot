@@ -1,7 +1,7 @@
 import { handleInteraction } from "@infra/discord/interactions/handler.ts";
 import { handleApi } from "@infra/http/handler.ts";
 
-import { spawnAnnouncer, possibilitiesRepository, spawnRepository } from "@config/container.ts";
+import { spawnAnnouncer, possibilitiesRepository, spawnRepository, infoRepository, pokemonApiRepository } from "@config/container.ts";
 
 import { spawn } from "@domain/spawn/spawn.ts";
 
@@ -17,11 +17,11 @@ Deno.serve((req) => {
 });
 
 Deno.cron("Spawn Routine", "* * * * *", async () => {
-  const [announcer, repository, pRepo] = await Promise.all([
-    spawnAnnouncer(),
-    spawnRepository(),
-    possibilitiesRepository(),
-  ]);
-
-  await spawn({ announcer, repository, possibilitiesRepository: pRepo });
+  await spawn({
+    announcer: spawnAnnouncer(),
+    repository: spawnRepository(),
+    possibilitiesRepository: possibilitiesRepository(),
+    infoRepository: infoRepository(),
+    pokemonApiRepository: pokemonApiRepository(),
+  });
 });

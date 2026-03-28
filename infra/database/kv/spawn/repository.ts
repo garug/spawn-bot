@@ -1,9 +1,6 @@
-import { SpawnRepository } from "@domain/spawn/SpawnRepository.ts";
-
-import { last } from "./last.ts";
+import type { SpawnRepository } from "@domain/spawn/ports/repository.ts";
+import { last, save } from "./last.ts";
 
 export function createSpawnRepository(): SpawnRepository {
-    return {
-        last
-    }
+    return { last, save };
 }

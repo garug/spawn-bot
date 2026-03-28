@@ -4,9 +4,10 @@ export type ActiveData = {
     id: number,
     shiny: boolean,
     chance: number,
+    image: string,
     stats: {
-        name: string,
-        value: number
+        stat: { name: string },
+        base_stat: number
     }[]
 }
 

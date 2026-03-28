@@ -1,19 +1,26 @@
-import { ActiveSpawn } from "@domain/spawn/spawn.types.ts";
+import type { ActiveSpawn } from "@domain/spawn/spawn.types.ts";
 
 const kv = await Deno.openKv();
 
-export async function last() {
-    const entry = await kv.get<ActiveSpawn>(["lastPokemon"]);
+// Temporal.Instant não é serializável nativamente no KV, então guardamos como epochMs
+type StoredSpawn = Omit<ActiveSpawn, "date"> & { dateMs: number };
 
-    if (entry.value) return entry.value;
+export async function last(): Promise<ActiveSpawn> {
+    const entry = await kv.get<StoredSpawn>(["lastPokemon"]);
 
-    const newEntry = {
-        date: Temporal.Now.instant(),
-        pokemon: undefined,
-        prev: undefined
-    };
+    if (entry.value) {
+        return {
+            ...entry.value,
+            date: Temporal.Instant.fromEpochMilliseconds(entry.value.dateMs),
+        };
+    }
 
-    kv.set(["lastPokemon"], newEntry);
+    const initial: ActiveSpawn = { date: Temporal.Now.instant(), value: undefined };
+    await save(initial);
+    return initial;
+}
 
-    return newEntry;
+export async function save(spawn: ActiveSpawn): Promise<void> {
+    const stored: StoredSpawn = { ...spawn, dateMs: spawn.date.epochMilliseconds };
+    await kv.set(["lastPokemon"], stored);
 }
