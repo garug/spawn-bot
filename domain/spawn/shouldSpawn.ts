@@ -2,11 +2,15 @@ import type { ActiveSpawn } from "./spawn.types.ts";
 
 const maxInterval = 12 * 60 * 1000;
 
-export function shouldResolveSpawn(on: Temporal.Instant, spawn: ActiveSpawn) {
-    const timeDifference =
-        on.epochMilliseconds - spawn.date.epochMilliseconds;
+export type SpawnCheck = {
+    should: boolean;
+    probability: number;
+    elapsedMs: number;
+};
 
-    const probability = timeDifference / maxInterval;
+export function shouldResolveSpawn(on: Temporal.Instant, spawn: ActiveSpawn): SpawnCheck {
+    const elapsedMs = on.epochMilliseconds - spawn.date.epochMilliseconds;
+    const probability = Math.min(elapsedMs / maxInterval, 1);
 
-    return probability > Math.random();
+    return { should: probability > Math.random(), probability, elapsedMs };
 }
