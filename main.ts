@@ -4,6 +4,9 @@ import { handleApi } from "@infra/http/handler.ts";
 import { spawnAnnouncer, possibilitiesRepository, spawnRepository, infoRepository, pokemonApiRepository } from "@config/container.ts";
 
 import { spawn } from "@domain/spawn/spawn.ts";
+import { logger } from "@infra/logger.ts";
+
+const log = logger("cron:spawn");
 
 Deno.serve((req) => {
   const url = new URL(req.url);
@@ -17,11 +20,36 @@ Deno.serve((req) => {
 });
 
 Deno.cron("Spawn Routine", "* * * * *", async () => {
-  await spawn({
-    announcer: spawnAnnouncer(),
-    repository: spawnRepository(),
-    possibilitiesRepository: possibilitiesRepository(),
-    infoRepository: infoRepository(),
-    pokemonApiRepository: pokemonApiRepository(),
-  });
+  log.info("tick");
+
+  try {
+    const result = await spawn({
+      announcer: spawnAnnouncer(),
+      repository: spawnRepository(),
+      possibilitiesRepository: possibilitiesRepository(),
+      infoRepository: infoRepository(),
+      pokemonApiRepository: pokemonApiRepository(),
+    });
+
+    switch (result.status) {
+      case "skipped":
+        log.info(`skipped: ${result.reason}`, result.reason === "probability"
+          ? { probability: `${(result.probability * 100).toFixed(1)}%`, elapsed: `${Math.round(result.elapsedMs / 1000)}s` }
+          : undefined);
+        break;
+      case "ran-away":
+        log.info(`ran away: ${result.pokemon}`);
+        break;
+      case "spawned":
+        log.info(`spawned: ${result.pokemon}`, {
+          id_dex: result.id_dex,
+          chance: `${(result.chance * 100).toFixed(3)}%`,
+          shiny: result.shiny,
+          rare: result.rare,
+        });
+        break;
+    }
+  } catch (e) {
+    log.error("unhandled error", { error: String(e) });
+  }
 });

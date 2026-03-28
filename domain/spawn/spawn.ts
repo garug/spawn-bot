@@ -17,18 +17,25 @@ type Deps = {
     pokemonApiRepository: PokemonApiRepository;
 };
 
-export async function spawn(deps: Deps) {
+export type SpawnResult =
+    | { status: "skipped"; reason: "probability"; probability: number; elapsedMs: number }
+    | { status: "skipped"; reason: "no possibilities" }
+    | { status: "ran-away"; pokemon: string }
+    | { status: "spawned"; pokemon: string; id_dex: number; shiny: boolean; chance: number; rare: boolean };
+
+export async function spawn(deps: Deps): Promise<SpawnResult> {
     const currentSpawn = await deps.repository.last();
     const now = Temporal.Now.instant();
 
-    if (!shouldResolveSpawn(now, currentSpawn)) {
-        return { status: "skipped", reason: "probability" };
+    const check = shouldResolveSpawn(now, currentSpawn);
+    if (!check.should) {
+        return { status: "skipped", reason: "probability", probability: check.probability, elapsedMs: check.elapsedMs };
     }
 
     if (currentSpawn.value) {
         await deps.announcer.announceRun(currentSpawn);
         await deps.repository.save({ date: now, value: undefined });
-        return { status: "ran-away" };
+        return { status: "ran-away", pokemon: currentSpawn.value.name };
     }
 
     const possibilities = await deps.possibilitiesRepository.findAll();
@@ -62,5 +69,5 @@ export async function spawn(deps: Deps) {
     await deps.repository.save(newSpawn);
     await deps.announcer.announceAppear(newSpawn);
 
-    return { status: "spawned" };
+    return { status: "spawned", pokemon: name, id_dex, shiny, chance, rare: chance <= RARE_POKEMON_CHANCE };
 }
