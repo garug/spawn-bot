@@ -1,5 +1,9 @@
 import { handleInteraction } from "@infra/discord/interactions/handler.ts";
-import { handleApi } from "./infra/http/handler.ts";
+import { handleApi } from "@infra/http/handler.ts";
+
+import { spawnAnnouncer, possibilitiesRepository, spawnRepository } from "@config/container.ts";
+
+import { spawn } from "@domain/spawn/spawn.ts";
 
 Deno.serve((req) => {
   const url = new URL(req.url);
@@ -12,6 +16,12 @@ Deno.serve((req) => {
   return new Response("Not found", { status: 404 });
 });
 
-Deno.cron("Log a message", "* * * * *", () => {
-  console.log("This will print once a minute.");
+Deno.cron("Spawn Routine", "* * * * *", async () => {
+  const [announcer, repository, pRepo] = await Promise.all([
+    spawnAnnouncer(),
+    spawnRepository(),
+    possibilitiesRepository(),
+  ]);
+
+  await spawn({ announcer, repository, possibilitiesRepository: pRepo });
 });
