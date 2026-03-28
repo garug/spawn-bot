@@ -1,6 +1,7 @@
 import "@infra/telemetry.ts";
 import { handleInteraction } from "@infra/discord/interactions/handler.ts";
 import { handleApi } from "@infra/http/handler.ts";
+import { connectDatabase } from "@config/mongo.ts";
 
 import { spawnAnnouncer, possibilitiesRepository, spawnRepository, infoRepository, pokemonApiRepository } from "@config/container.ts";
 
@@ -9,6 +10,9 @@ import { logger } from "@infra/logger.ts";
 import { traced } from "@infra/telemetry.ts";
 
 const log = logger("cron:spawn");
+
+// Pre-warm MongoDB connection on isolate startup so interactions don't pay the cold-start cost
+connectDatabase().catch((e) => log.error("initial db connect failed", { error: String(e) }));
 
 Deno.serve((req) => {
   const url = new URL(req.url);
