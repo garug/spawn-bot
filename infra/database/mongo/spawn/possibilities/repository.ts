@@ -14,9 +14,12 @@ export function createPossibilitiesRepositoryMongo(): PossibilitiesRepository {
                 const cached = await kv.get<Possibility<unknown>[]>(["possibilities"]);
                 if (cached.value) return cached.value;
 
-                await connectDatabase();
+                await traced("mongo.connect", () => connectDatabase());
 
-                const sets = await SetModel.find({ active: true });
+                const sets = await traced(
+                    "mongo.possibilities.find.query",
+                    () => SetModel.find({ active: true }),
+                );
                 const result = sets
                     .flatMap((set) => set.pokemon)
                     .map((p) => ({ id: p.id_dex, chance: p.chance }));

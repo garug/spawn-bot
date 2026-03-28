@@ -7,9 +7,13 @@ export function createInfoRepositoryMongo(): InfoRepository {
     return {
         async findOne(id_dex: number): Promise<PokemonInfo | null> {
             return traced("mongo.info.findOne", async () => {
-                await connectDatabase();
+                await traced("mongo.connect", () => connectDatabase());
 
-                const doc = await InfoPokemonModel.findOne({ id_dex });
+                const doc = await traced(
+                    "mongo.info.findOne.query",
+                    () => InfoPokemonModel.findOne({ id_dex }),
+                    { id_dex },
+                );
                 if (!doc) return null;
 
                 return {

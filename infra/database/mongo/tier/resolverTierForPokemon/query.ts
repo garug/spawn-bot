@@ -1,12 +1,17 @@
 import InfoPokemon from "@infra/database/mongo/models/InfoPokemon.model.ts";
 import { availableTiers } from "@domain/tier/availableTiers.ts";
 import type { Tier } from "@domain/tier/tier.types.ts";
+import { traced } from "@infra/telemetry.ts";
 
 export async function resolveTierForPokemon(deps: {
     idDex: number;
     total: number;
 }): Promise<Tier> {
-    const infoPokemon = await InfoPokemon.findOne({ id_dex: deps.idDex });
+    const infoPokemon = await traced(
+        "mongo.tier.resolverTierForPokemon.query",
+        () => InfoPokemon.findOne({ id_dex: deps.idDex }),
+        { id_dex: deps.idDex },
+    );
 
     const valid = infoPokemon?.tiers?.find((t: any) => deps.total >= t.value);
 
