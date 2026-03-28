@@ -21,6 +21,7 @@ export async function last(): Promise<ActiveSpawn> {
 }
 
 export async function save(spawn: ActiveSpawn): Promise<void> {
-    const stored: StoredSpawn = { ...spawn, dateMs: spawn.date.epochMilliseconds };
+    const { date, ...rest } = spawn;
+    const stored: StoredSpawn = { ...rest, dateMs: date.epochMilliseconds };
     await kv.set(["lastPokemon"], stored);
 }
