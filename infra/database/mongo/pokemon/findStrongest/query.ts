@@ -2,6 +2,7 @@ import type { QueryFilter } from "mongoose";
 import type { Page, Pageable, PokemonFilters } from "@domain/pokemon/pokemon.types.ts";
 
 import { withTotalPower, paginate, formatOwnedPokemonResponse } from "./pipelines.ts";
+import { traced } from "@infra/telemetry.ts";
 
 type Deps = {
     ownedPokemonModel: any;
@@ -10,20 +11,21 @@ type Deps = {
 };
 
 export async function findStrongest({ ownedPokemonModel, filters, pageable }: Deps): Promise<Page<any>> {
-    const mongoFilter = toMongoFilter(filters);
+    return traced("mongo.pokemon.findStrongest", async () => {
+        const mongoFilter = toMongoFilter(filters);
 
-    const contentPromise = ownedPokemonModel.aggregate([
-        { $match: mongoFilter },
-        ...withTotalPower,
-        ...paginate(pageable.page, pageable.size),
-        ...formatOwnedPokemonResponse,
-    ]);
+        const [content, count] = await Promise.all([
+            ownedPokemonModel.aggregate([
+                { $match: mongoFilter },
+                ...withTotalPower,
+                ...paginate(pageable.page, pageable.size),
+                ...formatOwnedPokemonResponse,
+            ]),
+            ownedPokemonModel.countDocuments(mongoFilter),
+        ]);
 
-    const countPromise = ownedPokemonModel.countDocuments(mongoFilter);
-
-    const [content, count] = await Promise.all([contentPromise, countPromise]);
-
-    return { content, count, ...pageable };
+        return { content, count, ...pageable };
+    });
 }
 
 function toMongoFilter(filters: PokemonFilters): QueryFilter<any> {
