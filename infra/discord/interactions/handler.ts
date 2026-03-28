@@ -93,7 +93,7 @@ export async function handleInteraction(req: Request): Promise<Response> {
             try {
                 await connectDatabase();
 
-                const { description } = await handleCatch(userId, guess, {
+                const { description, ephemeral } = await handleCatch(userId, guess, {
                     spawnRepository: spawnRepository(),
                     catchRepository: catchRepository(),
                 });
@@ -102,6 +102,7 @@ export async function handleInteraction(req: Request): Promise<Response> {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
+                        flags: ephemeral ? 64 : 0,
                         embeds: [{ color: 0xf39c12, description }],
                     }),
                 });

@@ -11,12 +11,12 @@ export async function handleCatch(
     userId: string,
     guess: string,
     deps: Deps,
-): Promise<{ description: string }> {
+): Promise<{ description: string; ephemeral?: boolean }> {
     const result = await catchPokemon(userId, guess, deps);
 
     switch (result.status) {
         case "no_spawn":
-            return { description: "There is no wild pokemon right now." };
+            return { description: "There is no wild pokemon right now.", ephemeral: true };
 
         case "missed":
             return { description: "That's not the right pokemon name!" };
