@@ -7,7 +7,7 @@ import { spawnAnnouncer, possibilitiesRepository, spawnRepository, infoRepositor
 
 import { spawn } from "@domain/spawn/spawn.ts";
 import { logger } from "@infra/logger.ts";
-import { traced, tracer } from "@infra/telemetry.ts";
+import { traced } from "@infra/telemetry.ts";
 
 const log = logger("cron:spawn");
 
@@ -17,10 +17,7 @@ connectDatabase().catch((e) => log.error("initial db connect failed", { error: S
 Deno.serve((req) => {
   const url = new URL(req.url);
 
-  if (url.pathname === "/interactions") {
-    const span = tracer.startSpan("interaction");
-    return handleInteraction(req, span);
-  }
+  if (url.pathname === "/interactions") return handleInteraction(req);
   if (url.pathname.startsWith("/api")) return handleApi(req);
 
   if (url.pathname === "/health") return Response.json({ ok: true });
