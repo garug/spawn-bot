@@ -1,17 +1,23 @@
 import { verifyInternalRequest } from "./verifyInternalRequest.ts";
-// import { runSpawnTick } from "@domain/spawn/runSpawnTick.ts";
+import { spawn } from "@domain/spawn/spawn.ts";
+import { spawnAnnouncer, spawnRepository, possibilitiesRepository, infoRepository, pokemonApiRepository } from "@config/container.ts";
 
 export async function handleApi(req: Request): Promise<Response> {
   const url = new URL(req.url);
 
-  // auth única para /api/*
   const auth = verifyInternalRequest(req);
   if (!auth.ok) return new Response("Unauthorized", { status: 401 });
 
-  // POST /api/spawn-tick
+  // POST /api/spawn-tick — disparo manual/forçado
   if (url.pathname === "/api/spawn-tick" && req.method === "POST") {
-    // await runSpawnTick({ now: new Date() });
-    return new Response("ok");
+    const result = await spawn({
+      announcer: spawnAnnouncer(),
+      repository: spawnRepository(),
+      possibilitiesRepository: possibilitiesRepository(),
+      infoRepository: infoRepository(),
+      pokemonApiRepository: pokemonApiRepository(),
+    });
+    return Response.json(result);
   }
 
   return new Response("Not found", { status: 404 });
