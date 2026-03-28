@@ -33,8 +33,10 @@ export async function spawn(deps: Deps): Promise<SpawnResult> {
     }
 
     if (currentSpawn.value) {
-        await deps.announcer.announceRun(currentSpawn);
-        await deps.repository.save({ date: now, value: undefined });
+        await Promise.all([
+            deps.announcer.announceRun(currentSpawn),
+            deps.repository.save({ date: now, value: undefined }),
+        ]);
         return { status: "ran-away", pokemon: currentSpawn.value.name };
     }
 
@@ -66,8 +68,10 @@ export async function spawn(deps: Deps): Promise<SpawnResult> {
         value: { name, form: form?.id, id: id_dex, shiny, chance, image, stats: pokeData.stats },
     };
 
-    await deps.repository.save(newSpawn);
-    await deps.announcer.announceAppear(newSpawn);
+    await Promise.all([
+        deps.repository.save(newSpawn),
+        deps.announcer.announceAppear(newSpawn),
+    ]);
 
     return { status: "spawned", pokemon: name, id_dex, shiny, chance, rare: chance <= RARE_POKEMON_CHANCE };
 }
