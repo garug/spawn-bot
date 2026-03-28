@@ -6,6 +6,7 @@ import {
 
 import { context } from "npm:@opentelemetry/api";
 import { env } from "@config/env.ts";
+import { traced } from "@infra/telemetry.ts";
 import { connectDatabase } from "@config/mongo.ts";
 import { handleDex } from "@messages/dex/handle.ts";
 import { handleCatch } from "@messages/catch/handle.ts";
@@ -42,36 +43,39 @@ export async function handleInteraction(req: Request): Promise<Response> {
 
         const ctx = context.active();
         queueMicrotask(context.bind(ctx, async () => {
-            try {
-                await connectDatabase();
+            await traced("interaction.dex", async () => {
+                try {
+                    await connectDatabase();
 
-                const data = await handleDex(interaction.member.user.id);
+                    const data = await handleDex(interaction.member.user.id);
 
-                await fetch(`https://discord.com/api/v10/webhooks/${appId}/${token}`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        flags: 0,
-                        embeds: [{
-                            color: 0xf39c12,
-                            description: [
-                                `<@${userId}> dex: ${data.uniquePokemon}/493`,
-                                "",
-                                `Strongest pokemon: ${data.strongestNames.join(", ") || "—"}`,
-                                "",
-                                // `Full dex: ${frontendUrl}/usuarios/${userId}`,
-                            ].join("\n")
-                        }]
-                    }),
-                });
-            } catch (e) {
-                console.error({ interaction, e });
-                await fetch(`https://discord.com/api/v10/webhooks/${appId}/${token}/messages/@original`, {
-                    method: "PATCH",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ content: "Erro ao executar /dex." }),
-                }).catch(() => { });
-            }
+                    await fetch(`https://discord.com/api/v10/webhooks/${appId}/${token}`, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            flags: 0,
+                            embeds: [{
+                                color: 0xf39c12,
+                                description: [
+                                    `<@${userId}> dex: ${data.uniquePokemon}/493`,
+                                    "",
+                                    `Strongest pokemon: ${data.strongestNames.join(", ") || "—"}`,
+                                    "",
+                                    // `Full dex: ${frontendUrl}/usuarios/${userId}`,
+                                ].join("\n")
+                            }]
+                        }),
+                    });
+                } catch (e) {
+                    console.error({ interaction, e });
+                    await fetch(`https://discord.com/api/v10/webhooks/${appId}/${token}/messages/@original`, {
+                        method: "PATCH",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ content: "Erro ao executar /dex." }),
+                    }).catch(() => { });
+                    throw e;
+                }
+            });
         }));
 
         // responde rápido
@@ -93,30 +97,33 @@ export async function handleInteraction(req: Request): Promise<Response> {
 
         const catchCtx = context.active();
         queueMicrotask(context.bind(catchCtx, async () => {
-            try {
-                await connectDatabase();
+            await traced("interaction.catch", async () => {
+                try {
+                    await connectDatabase();
 
-                const { description, ephemeral } = await handleCatch(userId, guess, {
-                    spawnRepository: spawnRepository(),
-                    catchRepository: catchRepository(),
-                });
+                    const { description, ephemeral } = await handleCatch(userId, guess, {
+                        spawnRepository: spawnRepository(),
+                        catchRepository: catchRepository(),
+                    });
 
-                await fetch(`https://discord.com/api/v10/webhooks/${appId}/${token}`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        flags: ephemeral ? 64 : 0,
-                        embeds: [{ color: 0xf39c12, description }],
-                    }),
-                });
-            } catch (e) {
-                console.error({ interaction, e });
-                await fetch(`https://discord.com/api/v10/webhooks/${appId}/${token}/messages/@original`, {
-                    method: "PATCH",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ content: "Erro ao executar /catch." }),
-                }).catch(() => { });
-            }
+                    await fetch(`https://discord.com/api/v10/webhooks/${appId}/${token}`, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            flags: ephemeral ? 64 : 0,
+                            embeds: [{ color: 0xf39c12, description }],
+                        }),
+                    });
+                } catch (e) {
+                    console.error({ interaction, e });
+                    await fetch(`https://discord.com/api/v10/webhooks/${appId}/${token}/messages/@original`, {
+                        method: "PATCH",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ content: "Erro ao executar /catch." }),
+                    }).catch(() => { });
+                    throw e;
+                }
+            });
         }));
 
         return Response.json({
