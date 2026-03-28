@@ -4,4 +4,5 @@ export const env = {
     discordBotToken: Deno.env.get("DISCORD_BOT_TOKEN") ?? "",
     discordChannelId: Deno.env.get("DISCORD_CHANNEL_ID") ?? "",
     discordPublicKey: Deno.env.get("DISCORD_PUBLIC_KEY") ?? "",
+    apiSecret: Deno.env.get("API_SECRET") ?? "",
 };
