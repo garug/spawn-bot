@@ -1,4 +1,5 @@
 {
+  "unstable": ["kv"],
   "tasks": {
     "dev": "deno run --env-file=.env --unstable-cron --allow-net --allow-env --allow-sys=osRelease --allow-read=/.dockerenv --watch main.ts"
   },
