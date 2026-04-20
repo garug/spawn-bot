@@ -15,7 +15,6 @@ const log = logger("cron:spawn");
 connectDatabase().catch((e) => log.error("initial db connect failed", { error: String(e) }));
 
 Deno.serve((req) => {
-  
   const url = new URL(req.url);
 
   if (url.pathname === "/interactions") {
@@ -29,7 +28,7 @@ Deno.serve((req) => {
   return new Response("Not found", { status: 404 });
 });
 
-Deno.cron("Spawn Routine", "* 0-3,10-23 * * *", async () => {
+Deno.cron("Spawn routine", "* 0-3,10-23 * * *", async () => {
   log.info("tick");
 
   await traced("cron.spawn", async () => {
