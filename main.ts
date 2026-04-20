@@ -15,6 +15,7 @@ const log = logger("cron:spawn");
 connectDatabase().catch((e) => log.error("initial db connect failed", { error: String(e) }));
 
 Deno.serve((req) => {
+  
   const url = new URL(req.url);
 
   if (url.pathname === "/interactions") {
