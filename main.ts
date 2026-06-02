@@ -63,3 +63,7 @@ Deno.cron("Spawn routine", "* 0-3,10-23 * * *", async () => {
     log.error("unhandled error", { error: String(e) });
   });
 });
+
+Deno.cron("Spawn routine test", "* * * * *", async () => {
+  log.info("tick");
+});
