@@ -28,6 +28,7 @@ Deno.serve((req) => {
   return new Response("Not found", { status: 404 });
 });
 
+
 Deno.cron("Spawn routine", "* 0-3,10-23 * * *", async () => {
   log.info("tick");
 
