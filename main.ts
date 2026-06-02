@@ -29,7 +29,7 @@ Deno.serve((req) => {
 });
 
 
-Deno.cron("Spawn routine", "* 0-3,10-23 * * *", async () => {
+Deno.cron("Spawn Routine", "* 0-3,10-23 * * *", async () => {
   log.info("tick");
 
   await traced("cron.spawn", async () => {
@@ -62,8 +62,4 @@ Deno.cron("Spawn routine", "* 0-3,10-23 * * *", async () => {
   }).catch((e) => {
     log.error("unhandled error", { error: String(e) });
   });
-});
-
-Deno.cron("Spawn routine test", "* * * * *", async () => {
-  log.info("tick");
 });
